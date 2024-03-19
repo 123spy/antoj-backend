@@ -29,7 +29,7 @@ public class JavaLanguageJudgeStrategy implements JudgeStrategy {
         // 判断输出
         if (outputList.size() != inputList.size()) {
             judgeInfoMessageEnum = JudgeInfoMessageEnum.WRONG_ANSWER;
-            judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
+            judgeInfoResponse.setMessage(judgeInfoMessageEnum.getText());
             return judgeInfoResponse;
         }
         // 判断答案
@@ -37,7 +37,7 @@ public class JavaLanguageJudgeStrategy implements JudgeStrategy {
             JudgeCase judgeCase = judgeCaseList.get(i);
             if (!judgeCase.getOutput().trim().replace("\n", "").equals(outputList.get(i).trim().replace("\n", ""))) {
                 judgeInfoMessageEnum = JudgeInfoMessageEnum.WRONG_ANSWER;
-                judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
+                judgeInfoResponse.setMessage(judgeInfoMessageEnum.getText());
                 return judgeInfoResponse;
             }
         }

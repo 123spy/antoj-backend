@@ -1,8 +1,10 @@
 package com.spy.antoj.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.spy.antoj.model.domain.PostThumb;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.spy.antoj.model.domain.User;
+import com.spy.antoj.model.dto.post.PostQueryRequest;
 
 /**
  * @author spy

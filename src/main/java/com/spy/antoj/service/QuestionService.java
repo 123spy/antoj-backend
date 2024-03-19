@@ -6,15 +6,16 @@ import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.Question;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.spy.antoj.model.dto.question.QuestionQueryRequest;
+import com.spy.antoj.model.vo.QuestionAdminVO;
 import com.spy.antoj.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
-* @author spy
-* @description 针对表【question(题目)】的数据库操作Service
-* @createDate 2024-03-09 19:20:39
-*/
+ * @author spy
+ * @description 针对表【question(题目)】的数据库操作Service
+ * @createDate 2024-03-09 19:20:39
+ */
 public interface QuestionService extends IService<Question> {
     /**
      * 参数校验
@@ -48,4 +49,13 @@ public interface QuestionService extends IService<Question> {
      * @param request
      */
     Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+
+    /**
+     * 获取题目（管理员视图）
+     *
+     * @param question
+     * @param request
+     * @return
+     */
+    QuestionAdminVO getQuestionAdminVO(Question question, HttpServletRequest request);
 }

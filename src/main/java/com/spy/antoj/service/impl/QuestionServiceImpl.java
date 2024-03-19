@@ -8,10 +8,13 @@ import com.spy.antoj.common.ErrorCode;
 import com.spy.antoj.constant.CommonConstant;
 import com.spy.antoj.exception.BusinessException;
 import com.spy.antoj.exception.ThrowUtils;
+import com.spy.antoj.mapper.PostThumbMapper;
+import com.spy.antoj.mapper.QuestionSubmitMapper;
+import com.spy.antoj.model.domain.*;
 import com.spy.antoj.model.domain.Question;
-import com.spy.antoj.model.domain.Question;
-import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.question.QuestionQueryRequest;
+import com.spy.antoj.model.enums.JudgeInfoMessageEnum;
+import com.spy.antoj.model.vo.QuestionAdminVO;
 import com.spy.antoj.model.vo.QuestionVO;
 import com.spy.antoj.model.vo.UserVO;
 import com.spy.antoj.service.QuestionService;
@@ -38,6 +41,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private QuestionSubmitMapper questionSubmitMapper;
 
     @Override
     public void validQuestion(Question question, boolean add) {
@@ -130,6 +136,19 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
             return question.getUserId();
         }).collect(Collectors.toSet());
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        // 登录，获取用户点赞
+        HashMap<Long, Boolean> questionIdHasAcceptMap = new HashMap<>();
+        User loginUser = userService.getLoginUserPermitNull(request);
+        if (loginUser != null) {
+            Set<Long> questionIdSet = questionList.stream().map(Question::getId).collect(Collectors.toSet());
+            loginUser = userService.getLoginUser(request);
+            QueryWrapper<QuestionSubmit> questionAceptedQueryWrapper = new QueryWrapper<>();
+            questionAceptedQueryWrapper.in("questionId", questionIdSet);
+            questionAceptedQueryWrapper.eq("userId", loginUser.getId());
+            questionAceptedQueryWrapper.like("judgeInfo", JudgeInfoMessageEnum.ACCEPTED.getText());
+            List<QuestionSubmit> questionSubmitList = questionSubmitMapper.selectList(questionAceptedQueryWrapper);
+            questionSubmitList.forEach(questionSubmit -> questionIdHasAcceptMap.put(questionSubmit.getQuestionId(), true));
+        }
         // 填充信息
         List<QuestionVO> questionVOList = questionList.stream().map(question -> {
             QuestionVO questionVO = QuestionVO.objToVo(question);
@@ -139,10 +158,17 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
                 user = userIdUserListMap.get(userId).get(0);
             }
             questionVO.setUserVO(userService.getUserVO(user));
+            questionVO.setHasAccept(questionIdHasAcceptMap.getOrDefault(question.getId(), false));
             return questionVO;
         }).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
+    }
+
+    @Override
+    public QuestionAdminVO getQuestionAdminVO(Question question, HttpServletRequest request) {
+        QuestionAdminVO questionAdminVO = QuestionAdminVO.objToVo(question);
+        return questionAdminVO;
     }
 
 }

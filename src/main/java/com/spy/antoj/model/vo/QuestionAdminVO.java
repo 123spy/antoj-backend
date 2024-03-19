@@ -1,14 +1,10 @@
 package com.spy.antoj.model.vo;
 
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.spy.antoj.model.domain.Question;
+import com.spy.antoj.model.dto.question.JudgeCase;
 import com.spy.antoj.model.dto.question.JudgeConfig;
 import lombok.Data;
-import nonapi.io.github.classgraph.json.JSONUtils;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
@@ -21,7 +17,7 @@ import java.util.List;
  * @TableName question
  */
 @Data
-public class QuestionVO implements Serializable {
+public class QuestionAdminVO implements Serializable {
     /**
      * id
      */
@@ -53,9 +49,14 @@ public class QuestionVO implements Serializable {
     private Integer acceptedNum;
 
     /**
-     * 判题用例
+     * 判题配置
      */
     private JudgeConfig judgeConfig;
+
+    /**
+     * 判题用例
+     */
+    private List<JudgeCase> judgeCases;
 
     /**
      * 创建用户 id
@@ -72,30 +73,21 @@ public class QuestionVO implements Serializable {
      */
     private Date updateTime;
 
-    /**
-     * 创建人信息
-     */
-    private UserVO userVO;
-
-    /**
-     * 是否通过
-     */
-    private Boolean hasAccept;
 
     /**
      * 包装类转对象
      */
-    public static Question voToObj(QuestionVO questionVO) {
-        if (questionVO == null) {
+    public static Question voToObj(QuestionAdminVO questionAdminVO) {
+        if (questionAdminVO == null) {
             return null;
         }
         Question question = new Question();
-        BeanUtils.copyProperties(questionVO, question);
-        List<String> tagList = questionVO.getTags();
+        BeanUtils.copyProperties(questionAdminVO, question);
+        List<String> tagList = questionAdminVO.getTags();
         if (tagList != null) {
             question.setTags(JSONUtil.toJsonStr(tagList));
         }
-        JudgeConfig voJudgeConfig = questionVO.getJudgeConfig();
+        JudgeConfig voJudgeConfig = questionAdminVO.getJudgeConfig();
         if (voJudgeConfig != null) {
             question.setJudgeConfig(JSONUtil.toJsonStr(voJudgeConfig));
         }
@@ -105,17 +97,23 @@ public class QuestionVO implements Serializable {
     /**
      * 对象转封包类
      */
-    public static QuestionVO objToVo(Question question) {
+    public static QuestionAdminVO objToVo(Question question) {
         if (question == null) {
             return null;
         }
-        QuestionVO questionVO = new QuestionVO();
-        BeanUtils.copyProperties(question, questionVO);
+        QuestionAdminVO questionAdminVO = new QuestionAdminVO();
+        BeanUtils.copyProperties(question, questionAdminVO);
+        // 标签
         List<String> tagList = JSONUtil.toList(question.getTags(), String.class);
-        questionVO.setTags(tagList);
+        questionAdminVO.setTags(tagList);
+        // 判题配置
         String judgeConfigStr = question.getJudgeConfig();
-        questionVO.setJudgeConfig(JSONUtil.toBean(judgeConfigStr, JudgeConfig.class));
-        return questionVO;
+        questionAdminVO.setJudgeConfig(JSONUtil.toBean(judgeConfigStr, JudgeConfig.class));
+        // 判题用例
+        String judgeCaseStr = question.getJudgeCase();
+        List<JudgeCase> judgeCaseList = JSONUtil.toList(judgeCaseStr, JudgeCase.class);
+        questionAdminVO.setJudgeCases(judgeCaseList);
+        return questionAdminVO;
     }
 
     private static final long serialVersionUID = 1L;

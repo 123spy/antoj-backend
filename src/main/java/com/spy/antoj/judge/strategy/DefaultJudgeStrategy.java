@@ -12,7 +12,7 @@ import java.util.List;
 public class DefaultJudgeStrategy implements JudgeStrategy {
     @Override
     public JudgeInfo doJudge(JudgeContext judgeContext) {
-        System.out.println("Java判题机制");
+        System.out.println("默认判题机制");
         JudgeInfo judgeInfo = judgeContext.getJudgeInfo();
         String message = judgeInfo.getMessage();
         Long memory = judgeInfo.getMemory();
@@ -35,9 +35,9 @@ public class DefaultJudgeStrategy implements JudgeStrategy {
         // 判断答案
         for (int i = 0; i < judgeCaseList.size(); i++) {
             JudgeCase judgeCase = judgeCaseList.get(i);
-            if (!judgeCase.getOutput().equals(outputList.get(i))) {
+            if (!judgeCase.getOutput().trim().replace("\n", "").equals(outputList.get(i).trim().replace("\n", ""))) {
                 judgeInfoMessageEnum = JudgeInfoMessageEnum.WRONG_ANSWER;
-                judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
+                judgeInfoResponse.setMessage(judgeInfoMessageEnum.getText());
                 return judgeInfoResponse;
             }
         }
@@ -47,6 +47,7 @@ public class DefaultJudgeStrategy implements JudgeStrategy {
         JudgeConfig judgeConfig = JSONUtil.toBean(judgeConfigStr, JudgeConfig.class);
         Long needMemoryLimit = judgeConfig.getMemoryLimit();
         Long needTimeLimit = judgeConfig.getTimeLimit();
+        memory = memory / 1024;
         if (memory > needMemoryLimit) {
             judgeInfoMessageEnum = JudgeInfoMessageEnum.MEMORY_LIMIT_EXCEEDED;
             judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());

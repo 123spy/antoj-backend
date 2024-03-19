@@ -16,12 +16,14 @@ import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.QuestionSubmit;
 import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.question.JudgeCase;
+import com.spy.antoj.model.enums.JudgeInfoMessageEnum;
 import com.spy.antoj.model.enums.QuestionSubmitStatusEnum;
 import com.spy.antoj.service.QuestionService;
 import com.spy.antoj.service.QuestionSubmitService;
 import com.spy.antoj.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -51,6 +53,7 @@ public class JudgeServiceImpl implements JudgeService {
     @Override
     public QuestionSubmit doJudge(long questionSubmitId) {
         // 1. 获取题目
+        // 获取题目提交出现错误
         QuestionSubmit questionSubmit = questionSubmitService.getById(questionSubmitId);
         ThrowUtils.throwIf(questionSubmit == null, ErrorCode.NOT_FOUND_ERROR);
         Long questionId = questionSubmit.getQuestionId();
@@ -76,7 +79,12 @@ public class JudgeServiceImpl implements JudgeService {
         // 获取输入用例
         String judgeCaseStr = question.getJudgeCase();
         List<JudgeCase> judgeCaseList = JSONUtil.toList(judgeCaseStr, JudgeCase.class);
-        List<String> inputList = judgeCaseList.stream().map(JudgeCase::getInput).collect(Collectors.toList());
+        // List<String> inputList = judgeCaseList.stream().map(JudgeCase::getInput).collect(Collectors.toList());
+        // 处理inputList
+        List<String> inputList = judgeCaseList.stream().map((item) -> {
+            String inputStr = item.getInput().replace("\n", " ");
+            return inputStr;
+        }).collect(Collectors.toList());
         ExecuteCodeRequest executeCodeRequest = ExecuteCodeRequest.builder()
                 .code(code)
                 .language(language)
@@ -94,19 +102,32 @@ public class JudgeServiceImpl implements JudgeService {
         judgeContext.setQuestion(question);
         judgeContext.setQuestionSubmit(questionSubmit);
         JudgeInfo judgeInfo = judgeManager.doJudge(judgeContext);
+        // 如果提交成功,则更新数据库
+        if (judgeInfo.getMessage().equals(JudgeInfoMessageEnum.ACCEPTED.getValue())) {
+            boolean result = questionService.update()
+                    .eq("id", question.getId())
+                    .setSql("acceptedNum = acceptedNum + 1")
+                    .update();
+            ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "数据更新失败");
+        }
 
         // 6. 修改数据库中的判题信息
         questionSubmitUpdate = new QuestionSubmit();
         questionSubmitUpdate.setId(questionSubmitId);
         questionSubmitUpdate.setStatus(QuestionSubmitStatusEnum.SUCCEED.getValue());
+        // 如果判题机连接错误，修改结果
+        if (JudgeInfoMessageEnum.REMOTE_ERROR.getText().equals(executeCodeResponse.getJudgeInfo().getMessage())) {
+            judgeInfo.setMessage(JudgeInfoMessageEnum.REMOTE_ERROR.getText());
+        }
         questionSubmitUpdate.setJudgeInfo(JSONUtil.toJsonStr(judgeInfo));
+
         update = questionSubmitService.updateById(questionSubmitUpdate);
         if (!update) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "题目状态更新错误");
         }
         QuestionSubmit questionSubmitResult = questionSubmitService.getById(questionSubmitId);
 
-        // 7. todo websocket返还信息
+        // 7. websocket返还信息
         User user = userService.getById(questionSubmit.getUserId());
         String toJsonStr = JSONUtil.toJsonStr(questionSubmitResult);
         webSocketUtils.sendOneMessage(user.getId().toString(), toJsonStr);

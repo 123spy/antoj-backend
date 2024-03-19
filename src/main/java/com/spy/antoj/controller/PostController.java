@@ -130,7 +130,7 @@ public class PostController {
         int current = postQueryRequest.getCurrent();
         int pageSize = postQueryRequest.getPageSize();
         // todo 爬虫限制
-        ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(pageSize > 50, ErrorCode.PARAMS_ERROR);
         Page<Post> postPage = postService.page(new Page<>(current, pageSize),
                 postService.getQueryWrapper(postQueryRequest));
         Page<PostVO> postVOPage = postService.getPostVOPage(postPage, request);

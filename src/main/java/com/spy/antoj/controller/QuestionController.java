@@ -13,6 +13,7 @@ import com.spy.antoj.exception.ThrowUtils;
 import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.question.*;
+import com.spy.antoj.model.vo.QuestionAdminVO;
 import com.spy.antoj.model.vo.QuestionVO;
 import com.spy.antoj.service.QuestionService;
 import com.spy.antoj.service.UserService;
@@ -72,6 +73,7 @@ public class QuestionController {
     }
 
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteQuestion(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         // 1. 校验
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
@@ -121,6 +123,7 @@ public class QuestionController {
     }
 
     @GetMapping("/get")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Question> getQuestionById(long id, HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -149,6 +152,19 @@ public class QuestionController {
     }
 
 
+    @GetMapping("/get/vo/admin")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<QuestionAdminVO> getQuestionAdminVOById(long id, HttpServletRequest request) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Question question = questionService.getById(id);
+        if (question == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(questionService.getQuestionAdminVO(question, request));
+    }
+
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<QuestionVO>> listQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest, HttpServletRequest request) {
         if (questionQueryRequest == null) {
@@ -157,7 +173,7 @@ public class QuestionController {
         int current = questionQueryRequest.getCurrent();
         int pageSize = questionQueryRequest.getPageSize();
         // todo 爬虫限制
-        ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(pageSize > 50, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, pageSize),
                 questionService.getQueryWrapper(questionQueryRequest));
         Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);

@@ -26,6 +26,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -79,6 +80,13 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         boolean save = this.save(questionSubmit);
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "数据保存失败");
         Long questionSubmitId = questionSubmit.getId();
+
+        // 更新题目提交数量
+        boolean result = questionService.update()
+                .eq("id", question.getId())
+                .setSql("submitNum = submitNum + 1")
+                .update();
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "数据更新失败");
 
         // 异步判题
         CompletableFuture.runAsync(() -> {

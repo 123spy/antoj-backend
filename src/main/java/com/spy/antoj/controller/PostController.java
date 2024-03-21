@@ -12,10 +12,7 @@ import com.spy.antoj.exception.BusinessException;
 import com.spy.antoj.exception.ThrowUtils;
 import com.spy.antoj.model.domain.Post;
 import com.spy.antoj.model.domain.User;
-import com.spy.antoj.model.dto.post.PostAddRequest;
-import com.spy.antoj.model.dto.post.PostEditRequest;
-import com.spy.antoj.model.dto.post.PostQueryRequest;
-import com.spy.antoj.model.dto.post.PostUpdateRequest;
+import com.spy.antoj.model.dto.post.*;
 import com.spy.antoj.model.vo.PostVO;
 import com.spy.antoj.service.PostService;
 import com.spy.antoj.service.UserService;
@@ -148,7 +145,7 @@ public class PostController {
         long current = postQueryRequest.getCurrent();
         long size = postQueryRequest.getPageSize();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(size > 50, ErrorCode.PARAMS_ERROR);
         Page<Post> postPage = postService.page(new Page<>(current, size),
                 postService.getQueryWrapper(postQueryRequest));
         Page<PostVO> postVOPage = postService.getPostVOPage(postPage, request);
@@ -181,4 +178,12 @@ public class PostController {
         return ResultUtils.success(result);
     }
 
+    @PostMapping("/recommend")
+    public BaseResponse<List<PostVO>> getRecommendByList(@RequestBody PostRecommendRequest postRecommendRequest, HttpServletRequest request) {
+        if (postRecommendRequest == null || postRecommendRequest.getPostId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        List<PostVO> postVOList = postService.matchPost(postRecommendRequest.getPostId(), postRecommendRequest.getNum());
+        return ResultUtils.success(postVOList);
+    }
 }

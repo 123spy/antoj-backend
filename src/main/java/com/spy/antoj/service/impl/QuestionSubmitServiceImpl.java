@@ -9,30 +9,28 @@ import com.spy.antoj.constant.CommonConstant;
 import com.spy.antoj.exception.BusinessException;
 import com.spy.antoj.exception.ThrowUtils;
 import com.spy.antoj.judge.JudgeService;
+import com.spy.antoj.judge.codesandbox.model.DebugCodeContent;
 import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.QuestionSubmit;
 import com.spy.antoj.model.domain.User;
+import com.spy.antoj.model.dto.question.JudgeCase;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitAddRequest;
+import com.spy.antoj.model.dto.QuestionDebug.QuestionDebugRequest;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitQueryRequest;
 import com.spy.antoj.model.enums.QuestionSubmitLanguageEnum;
 import com.spy.antoj.model.enums.QuestionSubmitStatusEnum;
 import com.spy.antoj.model.vo.QuestionSubmitVO;
-import com.spy.antoj.model.vo.QuestionVO;
 import com.spy.antoj.service.QuestionService;
 import com.spy.antoj.service.QuestionSubmitService;
 import com.spy.antoj.mapper.QuestionSubmitMapper;
 import com.spy.antoj.utils.SqlUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -130,6 +128,29 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         }).collect(Collectors.toList());
         questionSubmitVOPage.setRecords(questionSubmitVOList);
         return questionSubmitVOPage;
+    }
+
+    @Override
+    public long doQuestionDebug(QuestionDebugRequest questionDebugRequest, User loginUser) {
+        String language = questionDebugRequest.getLanguage();
+        String code = questionDebugRequest.getCode();
+        Long questionId = questionDebugRequest.getQuestionId();
+        String inputCase = questionDebugRequest.getInput();
+
+        DebugCodeContent debugCodeContent = new DebugCodeContent();
+
+        debugCodeContent.setQuestionId(questionId);
+        debugCodeContent.setCode(code);
+        debugCodeContent.setLanguage(language);
+        debugCodeContent.setInputCase(inputCase);
+        debugCodeContent.setUserId(loginUser.getId());
+
+        // 异步判题
+        CompletableFuture.runAsync(() -> {
+            judgeService.doDebug(debugCodeContent);
+        });
+
+        return 0;
     }
 }
 

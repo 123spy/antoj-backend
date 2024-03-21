@@ -1,5 +1,6 @@
 package com.spy.antoj.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
 import com.spy.antoj.annotation.AuthCheck;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 帖子接口
@@ -212,7 +214,7 @@ public class QuestionController {
         long current = questionQueryRequest.getCurrent();
         long size = questionQueryRequest.getPageSize();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(size > 50, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
         Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
@@ -253,4 +255,20 @@ public class QuestionController {
         return ResultUtils.success(result);
     }
 
+    @PostMapping("/random")
+    public BaseResponse<QuestionVO> getRandomQuestionVO() {
+        QueryWrapper<Question> questionQueryWrapper = new QueryWrapper<>();
+        questionQueryWrapper.select("id");
+        List<Long> questionIdList = questionService.list(questionQueryWrapper).stream().map(Question::getId).collect(Collectors.toList());
+        double randomDouble = Math.random();
+        // 假设我们还是想要生成10到30（包括10和30）之间的随机整数
+        int min = 0;
+        int max = questionIdList.size() - 1;
+        // 计算并转换为int类型
+        int randomNumber = (int) (min + randomDouble * (max - min + 1));
+        Long questionId = questionIdList.get(randomNumber);
+        Question question = questionService.getById(questionId);
+        QuestionVO questionVO = QuestionVO.objToVo(question);
+        return ResultUtils.success(questionVO);
+    }
 }

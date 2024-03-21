@@ -1,22 +1,17 @@
 package com.spy.antoj.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.spy.antoj.annotation.AuthCheck;
 import com.spy.antoj.common.BaseResponse;
 import com.spy.antoj.common.ErrorCode;
-import com.spy.antoj.common.PageRequest;
 import com.spy.antoj.common.ResultUtils;
-import com.spy.antoj.constant.UserConstant;
 import com.spy.antoj.exception.BusinessException;
 import com.spy.antoj.exception.ThrowUtils;
-import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.QuestionSubmit;
 import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitAddRequest;
+import com.spy.antoj.model.dto.QuestionDebug.QuestionDebugRequest;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitQueryRequest;
-import com.spy.antoj.model.dto.user.UserQueryRequest;
 import com.spy.antoj.model.vo.QuestionSubmitVO;
-import com.spy.antoj.model.vo.QuestionVO;
 import com.spy.antoj.service.QuestionSubmitService;
 import com.spy.antoj.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +43,17 @@ public class QuestionSubmitController {
         return ResultUtils.success(questionSubmitId);
     }
 
+    @PostMapping("/debug")
+    public BaseResponse<Long> doDebug(@RequestBody QuestionDebugRequest questionDebugRequest, HttpServletRequest request) {
+        if (questionDebugRequest == null || questionDebugRequest.getQuestionId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 提交需要登录
+        User loginUser = userService.getLoginUser(request);
+        long questionSubmitId = questionSubmitService.doQuestionDebug(questionDebugRequest, loginUser);
+        return ResultUtils.success(questionSubmitId);
+    }
+
     @GetMapping("/get/vo")
     public BaseResponse<QuestionSubmitVO> getQuestionSubmitVOById(long id, HttpServletRequest request) {
         if (id <= 0) {
@@ -73,7 +79,7 @@ public class QuestionSubmitController {
         int current = questionSubmitQueryRequest.getCurrent();
         int pageSize = questionSubmitQueryRequest.getPageSize();
         // todo 爬虫限制
-        ThrowUtils.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(pageSize > 50, ErrorCode.PARAMS_ERROR);
         Page<QuestionSubmit> questionPage = questionSubmitService.page(new Page<>(current, pageSize),
                 questionSubmitService.getQueryWrapper(questionSubmitQueryRequest));
         Page<QuestionSubmitVO> questionVOPage = questionSubmitService.getQuestionSubmitVOPage(questionPage, request);

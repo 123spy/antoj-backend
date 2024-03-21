@@ -83,6 +83,11 @@ public class QuestionVO implements Serializable {
     private Boolean hasAccept;
 
     /**
+     *
+     */
+    private String inputCase;
+
+    /**
      * 包装类转对象
      */
     public static Question voToObj(QuestionVO questionVO) {

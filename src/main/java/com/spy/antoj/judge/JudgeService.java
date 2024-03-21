@@ -1,5 +1,6 @@
 package com.spy.antoj.judge;
 
+import com.spy.antoj.judge.codesandbox.model.DebugCodeContent;
 import com.spy.antoj.model.domain.QuestionSubmit;
 
 public interface JudgeService {
@@ -10,4 +11,11 @@ public interface JudgeService {
      * @return
      */
     QuestionSubmit doJudge(long questionSubmitId);
+
+    /**
+     * Debug代码
+     *
+     * @param debugCodeContent
+     */
+    void doDebug(DebugCodeContent debugCodeContent);
 }

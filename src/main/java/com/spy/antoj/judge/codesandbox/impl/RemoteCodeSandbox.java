@@ -26,6 +26,7 @@ public class RemoteCodeSandbox implements CodeSandbox {
         try {
             // 发送请求
             String responseStr = HttpUtil.createPost(url)
+                    .timeout(15000)
                     .body(json)
                     .execute()
                     .body();

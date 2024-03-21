@@ -2,11 +2,11 @@ package com.spy.antoj.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.QuestionSubmit;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitAddRequest;
+import com.spy.antoj.model.dto.QuestionDebug.QuestionDebugRequest;
 import com.spy.antoj.model.dto.questionsubmit.QuestionSubmitQueryRequest;
 import com.spy.antoj.model.vo.QuestionSubmitVO;
 
@@ -44,4 +44,13 @@ public interface QuestionSubmitService extends IService<QuestionSubmit> {
      * @return
      */
     Page<QuestionSubmitVO> getQuestionSubmitVOPage(Page<QuestionSubmit> questionSubmitPage, HttpServletRequest request);
+
+    /**
+     * 题目提交Debug
+     *
+     * @param questionDebugRequest
+     * @param loginUser
+     * @return
+     */
+    long doQuestionDebug(QuestionDebugRequest questionDebugRequest, User loginUser);
 }

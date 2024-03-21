@@ -18,7 +18,9 @@ import com.spy.antoj.model.vo.UserVO;
 import com.spy.antoj.service.PostService;
 import com.spy.antoj.mapper.PostMapper;
 import com.spy.antoj.service.UserService;
+import com.spy.antoj.utils.MyTextComparator;
 import com.spy.antoj.utils.SqlUtils;
+import javafx.util.Pair;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -159,6 +161,53 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         }).collect(Collectors.toList());
         postVOPage.setRecords(postVOList);
         return postVOPage;
+    }
+
+    @Override
+    public List<PostVO> matchPost(Long postId, Long num) {
+        // 校验
+        Post nowPost = this.getById(postId);
+        ThrowUtils.throwIf(nowPost == null, ErrorCode.PARAMS_ERROR);
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id", "title", "tags", "content");
+        queryWrapper.isNotNull("content");
+        List<Post> postList = this.list(queryWrapper);
+
+        // 计算相似度
+        List<Pair<Post, Double>> list = new ArrayList<>();
+        for (int i = 0; i < postList.size(); i++) {
+            Post post = postList.get(i);
+            String postContent = post.getContent();
+
+            if (StringUtils.isBlank(postContent) || nowPost.getId().equals(post.getId())) {
+                continue;
+            }
+            // 计算分数
+            Double contentSimilarity = MyTextComparator.getCosineSimilarity(nowPost.getContent(), post.getContent());
+            Double tagSimilarity = MyTextComparator.getCosineSimilarity(nowPost.getTags(), post.getTags());
+            Double titleSimilarity = MyTextComparator.getCosineSimilarity(nowPost.getTitle(), post.getTitle());
+            Double sumSimilarity = (contentSimilarity * 0.6) + (tagSimilarity * 0.2) + (titleSimilarity * 0.2);
+            list.add(new Pair<>(post, sumSimilarity));
+        }
+
+        List<Pair<Post, Double>> topPostPairList = list.stream()
+                .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
+                .limit(num)
+                .collect(Collectors.toList());
+        // 原本顺序的 userId 列表
+        List<Long> postIdList = topPostPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
+        QueryWrapper<Post> postQueryWrapper = new QueryWrapper<>();
+        postQueryWrapper.in("id", postIdList);
+
+        Map<Long, List<PostVO>> postIdPostListMap = this.list(postQueryWrapper)
+                .stream()
+                .map(post -> PostVO.objToVo(post))
+                .collect(Collectors.groupingBy(PostVO::getId));
+        List<PostVO> finalPostList = new ArrayList<>();
+        for (Long postIdItem : postIdList) {
+            finalPostList.add(postIdPostListMap.get(postIdItem).get(0));
+        }
+        return finalPostList;
     }
 }
 

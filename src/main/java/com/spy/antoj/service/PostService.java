@@ -8,6 +8,7 @@ import com.spy.antoj.model.dto.post.PostQueryRequest;
 import com.spy.antoj.model.vo.PostVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author spy
@@ -48,4 +49,13 @@ public interface PostService extends IService<Post> {
      * @param request
      */
     Page<PostVO> getPostVOPage(Page<Post> postPage, HttpServletRequest request);
+
+    /**
+     * 帖子匹配
+     *
+     * @param postId
+     * @param num
+     * @return
+     */
+    List<PostVO> matchPost(Long postId, Long num);
 }

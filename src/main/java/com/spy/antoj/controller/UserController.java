@@ -11,6 +11,7 @@ import com.spy.antoj.exception.BusinessException;
 import com.spy.antoj.model.domain.User;
 import com.spy.antoj.model.dto.user.UserQueryRequest;
 import com.spy.antoj.model.dto.user.*;
+import com.spy.antoj.model.vo.PostVO;
 import com.spy.antoj.model.vo.UserVO;
 import com.spy.antoj.service.UserService;
 import com.spy.antoj.utils.AccountUtils;
@@ -120,14 +121,14 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User oldUser = userService.getById(userUpdateRequest.getId());
-        if(oldUser == null) {
+        if (oldUser == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);
         String userPassword = userUpdateRequest.getUserPassword();
         // 如果为空，就按照原本的密码进行，否则进行校验
-        if(StringUtils.isEmpty(userPassword)) {
+        if (StringUtils.isEmpty(userPassword)) {
             user.setUserPassword(oldUser.getUserPassword());
         } else {
             if (!AccountUtils.checkUserPassword(userPassword)) {

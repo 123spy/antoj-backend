@@ -12,4 +12,4 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 # 指定容器创建时的默认命令。
-CMD ["java","-jar","/app/target/yuoj-backend-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+CMD ["java","-jar","/app/target/antoj-backend-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]

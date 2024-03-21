@@ -1,5 +1,6 @@
 package com.spy.antoj.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,6 +13,7 @@ import com.spy.antoj.mapper.PostThumbMapper;
 import com.spy.antoj.mapper.QuestionSubmitMapper;
 import com.spy.antoj.model.domain.*;
 import com.spy.antoj.model.domain.Question;
+import com.spy.antoj.model.dto.question.JudgeCase;
 import com.spy.antoj.model.dto.question.QuestionQueryRequest;
 import com.spy.antoj.model.enums.JudgeInfoMessageEnum;
 import com.spy.antoj.model.vo.QuestionAdminVO;
@@ -85,6 +87,15 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         }
         UserVO userVO = userService.getUserVO(user);
         questionVO.setUserVO(userVO);
+
+        // 设置一组基础样例
+        String judgeCaseStr = question.getJudgeCase();
+        List<JudgeCase> judgeCaseList = JSONUtil.toList(judgeCaseStr, JudgeCase.class);
+        if (judgeCaseList.size() > 0) {
+            String input = judgeCaseList.get(0).getInput();
+            questionVO.setInputCase(input);
+        }
+
         return questionVO;
     }
 

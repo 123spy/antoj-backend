@@ -8,6 +8,7 @@ import com.spy.antoj.exception.ThrowUtils;
 import com.spy.antoj.judge.codesandbox.CodeSandbox;
 import com.spy.antoj.judge.codesandbox.CodeSandboxFactory;
 import com.spy.antoj.judge.codesandbox.CodeSandboxProxy;
+import com.spy.antoj.judge.codesandbox.model.DebugCodeContent;
 import com.spy.antoj.judge.codesandbox.model.ExecuteCodeRequest;
 import com.spy.antoj.judge.codesandbox.model.ExecuteCodeResponse;
 import com.spy.antoj.judge.codesandbox.model.JudgeInfo;
@@ -15,6 +16,7 @@ import com.spy.antoj.judge.strategy.JudgeContext;
 import com.spy.antoj.model.domain.Question;
 import com.spy.antoj.model.domain.QuestionSubmit;
 import com.spy.antoj.model.domain.User;
+import com.spy.antoj.model.dto.QuestionDebug.QuestionDebugResult;
 import com.spy.antoj.model.dto.question.JudgeCase;
 import com.spy.antoj.model.enums.JudgeInfoMessageEnum;
 import com.spy.antoj.model.enums.QuestionSubmitStatusEnum;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -134,6 +137,53 @@ public class JudgeServiceImpl implements JudgeService {
 //        webSocketUtils.sendOneMessage(user.getId().toString(), JSONUtil.toJsonStr(questionSubmitResult));
 
         return questionSubmitResult;
+    }
+
+    /**
+     * 代码Debug模式
+     */
+    @Override
+    public void doDebug(DebugCodeContent debugCodeContent) {
+        // 1. 获取题目
+        ThrowUtils.throwIf(debugCodeContent == null, ErrorCode.NOT_FOUND_ERROR);
+        Long questionId = debugCodeContent.getQuestionId();
+        Question question = questionService.getById(questionId);
+        ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 2. 调用沙箱，获取执行结果
+        CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type);
+        codeSandbox = new CodeSandboxProxy(codeSandbox);
+
+        String language = debugCodeContent.getLanguage();
+        String code = debugCodeContent.getCode();
+
+        // 获取输入用例
+        List<JudgeCase> judgeCaseList = new ArrayList<>();
+        String inputCaseStr = debugCodeContent.getInputCase().replace("\n", " ");
+
+        List<String> inputList = new ArrayList<>();
+        inputList.add(inputCaseStr);
+
+        ExecuteCodeRequest executeCodeRequest = ExecuteCodeRequest.builder()
+                .code(code)
+                .language(language)
+                .inputList(inputList)
+                .build();
+        // 代码沙箱执行
+        ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
+        List<String> outputList = executeCodeResponse.getOutputList();
+        // 5. 根据执行结果，设置题目的判题状态和信息
+
+        QuestionDebugResult questionDebugResult = new QuestionDebugResult();
+        questionDebugResult.setCode(code);
+        questionDebugResult.setLanguage(language);
+        questionDebugResult.setOutputList(outputList);
+
+
+        // 7. websocket返还信息
+        User user = userService.getById(debugCodeContent.getUserId());
+        String toJsonStr = JSONUtil.toJsonStr(questionDebugResult);
+        webSocketUtils.sendOneMessage(user.getId().toString(), toJsonStr);
     }
 
 }
